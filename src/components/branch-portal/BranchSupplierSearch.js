@@ -1,8 +1,9 @@
 import React from 'react';
-import { Box, Button, TextField, MenuItem, Typography } from '@mui/material';
+import Button from '../shared/Button';
+import Input from '../shared/Input';
+import Select from '../shared/Select';
 
-// הרכיב מקבל כעת את כל הפונקציות הדרושות לחיפוש מתקדם
-function BranchSupplierSearch({ query, setQuery, criteria, setCriteria, onSearch }) {
+function BranchSupplierSearch({ query, setQuery, criteria, setCriteria, onSearch, onClear }) {
 
   const getPlaceholder = () => {
     if (criteria === 'name') return 'הקלד שם ספק...';
@@ -10,30 +11,47 @@ function BranchSupplierSearch({ query, setQuery, criteria, setCriteria, onSearch
     return 'הקלד ערך לחיפוש...';
   };
 
+  const handleClear = () => {
+    setQuery('');
+    if (onClear) {
+      onClear();
+    }
+  };
+
   return (
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>חיפוש ספק מאושר</Typography>
-      <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} alignItems="stretch">
-        <TextField
-          select
+    <div className="mb-4">
+      <h4 className="text-lg font-semibold mb-3">חיפוש ספק מאושר</h4>
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+        <Select
           value={criteria}
           label="סוג חיפוש"
           onChange={(e) => setCriteria(e.target.value)}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="name">לפי שם</MenuItem>
-          <MenuItem value="tag">לפי תחום / תג</MenuItem>
-        </TextField>
-        <TextField
+          options={[
+            { value: 'name', label: 'לפי שם' },
+            { value: 'tag', label: 'לפי תחום / תג' }
+          ]}
+          fullWidth={false}
+          className="sm:w-44"
+        />
+        <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          fullWidth
-          label={getPlaceholder()}
+          placeholder={getPlaceholder()}
           onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+          className="flex-grow"
+          showClearButton={true}
+          onClear={handleClear}
         />
-        <Button variant="contained" onClick={onSearch} sx={{ whiteSpace: 'nowrap' }}>חיפוש</Button>
-      </Box>
-    </Box>
+        <Button 
+          variant="primary" 
+          onClick={onSearch}
+          className="whitespace-nowrap sm:w-auto w-full"
+        >
+          חיפוש
+        </Button>
+      </div>
+    </div>
   );
 }
+
 export default BranchSupplierSearch;

@@ -1,9 +1,10 @@
 import React from 'react';
+import Button from '../shared/Button';
+import Input from '../shared/Input';
+import Select from '../shared/Select';
 
-// The component receives state and handler functions as props from its parent
-function SupplierSearch({ query, setQuery, criteria, setCriteria, onSearch }) {
+function SupplierSearch({ query, setQuery, criteria, setCriteria, onSearch, onClear }) {
   
-  // Update placeholder text based on selected criteria
   const getPlaceholder = () => {
     if (criteria === 'name') {
       return 'הקלד שם ספק...';
@@ -14,38 +15,52 @@ function SupplierSearch({ query, setQuery, criteria, setCriteria, onSearch }) {
     return 'הקלד ערך לחיפוש...';
   };
 
+  const handleClear = () => {
+    setQuery('');
+    if (onClear) {
+      onClear();
+    }
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 mx-auto max-w-4xl">
-      <h3 className="text-2xl font-bold text-gray-800 mb-4 pb-2 border-b">חיפוש ספקים</h3>
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch">
-        {/* Dropdown for selecting search criteria */}
-        <select 
-          value={criteria} 
-          onChange={(e) => setCriteria(e.target.value)} 
-          className="border border-gray-300 rounded-md p-2 h-full"
-        >
-          <option value="name">לפי שם</option>
-          <option value="tag">לפי תג</option>
-        </select>
+    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+      <h3 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b">חיפוש ספק מאושר</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+        <div className="sm:col-span-2">
+          <Select 
+            label="סוג חיפוש"
+            value={criteria} 
+            onChange={(e) => setCriteria(e.target.value)} 
+            options={[
+              { value: 'name', label: 'לפי שם' },
+              { value: 'tag', label: 'לפי תג' }
+            ]}
+            fullWidth={true}
+          />
+        </div>
 
-        {/* Text input for the search query */}
-        <input 
-          type="text" 
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="border border-gray-300 rounded-md p-2 w-full h-full flex-grow" 
-          placeholder={getPlaceholder()}
-          // Allows pressing Enter to trigger search
-          onKeyDown={(e) => e.key === 'Enter' && onSearch()} 
-        />
+        <div className="sm:col-span-8">
+          <Input 
+            type="text"
+            label="הקלד שם ספק..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={getPlaceholder()}
+            onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+            showClearButton={true}
+            onClear={handleClear}
+          />
+        </div>
 
-        {/* Search button */}
-        <button 
-          onClick={onSearch} 
-          className="bg-blue-500 text-white hover:bg-blue-600 font-bold py-2 px-5 rounded-md whitespace-nowrap sm:w-auto w-full"
-        >
-          חיפוש
-        </button>
+        <div className="sm:col-span-2">
+          <Button 
+            onClick={onSearch} 
+            variant="primary"
+            fullWidth={true}
+          >
+            חיפוש
+          </Button>
+        </div>
       </div>
     </div>
   );

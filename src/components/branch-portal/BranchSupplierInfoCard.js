@@ -1,8 +1,9 @@
-// src/components/branch-portal/BranchSupplierInfoCard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import api from '../../api/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
-import { Button, TextField, Rating, Box, Typography, Card, CardHeader, CardContent, Divider } from '@mui/material';
+import { Rating } from '@mui/material';
+import Button from '../shared/Button';
+import Input from '../shared/Input';
 import RatingSummary from '../shared/RatingSummary';
 import ReviewList from '../shared/ReviewList';
 
@@ -17,7 +18,7 @@ function BranchSupplierInfoCard({ supplier, onClear }) {
 
   if (!supplier) {
     return (
-      <div className="bg-yellow-100 p-4 mt-4 rounded-md border border-yellow-200 text-center text-yellow-800">
+      <div className="bg-yellow-100 p-4 mt-4 rounded-lg border border-yellow-200 text-center text-yellow-800">
         לא נמצא ספק התואם לחיפוש.
       </div>
     );
@@ -48,7 +49,7 @@ function BranchSupplierInfoCard({ supplier, onClear }) {
       });
       setNewRating(0);
       setNewComment('');
-      fetchReviews(); // Refresh the reviews list after submitting
+      fetchReviews();
       alert('הדירוג נשלח בהצלחה!');
     } catch (err) {
       console.error("Error submitting review:", err);
@@ -56,27 +57,6 @@ function BranchSupplierInfoCard({ supplier, onClear }) {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const renderStars = (rating) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    
-    return (
-      <div className="flex items-center">
-        {[...Array(fullStars)].map((_, i) => (
-          <span key={i} className="text-yellow-400 text-lg">★</span>
-        ))}
-        {hasHalfStar && <span className="text-yellow-400 text-lg">☆</span>}
-        {[...Array(emptyStars)].map((_, i) => (
-          <span key={i + fullStars + (hasHalfStar ? 1 : 0)} className="text-gray-300 text-lg">☆</span>
-        ))}
-        <span className="ml-2 text-sm text-gray-600">
-          {rating > 0 ? `${rating.toFixed(1)} (${supplier.total_reviews} דירוגים)` : 'אין דירוגים'}
-        </span>
-      </div>
-    );
   };
 
   const toggleReviews = () => {
@@ -87,81 +67,99 @@ function BranchSupplierInfoCard({ supplier, onClear }) {
   };
 
   return (
-    <Card sx={{ mt: 2 }}>
-      <CardHeader
-        title={
-          <Typography variant="h6">{supplier.name}</Typography>
-        }
-        action={
-          <Button onClick={onClear} size="small">נקה</Button>
-        }
-      />
-      <CardContent>
-        <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
-          <Typography variant="body2"><strong>שם:</strong> {supplier.name}</Typography>
-          <Typography variant="body2"><strong>ח.פ./ע.מ.:</strong> {supplier.supplier_id}</Typography>
-          <Typography variant="body2"><strong>איש קשר:</strong> {supplier.poc_name}</Typography>
-          <Typography variant="body2">
-            <strong>טלפון:</strong> <a href={`tel:${supplier.poc_phone}`}>{supplier.poc_phone}</a>
-          </Typography>
-          <Box gridColumn={{ xs: 'span 1', sm: 'span 2' }}>
-            <Typography variant="body2">
-              <strong>אימייל:</strong> <a href={`mailto:${supplier.poc_email}`}>{supplier.poc_email}</a>
-            </Typography>
-          </Box>
-          <Box gridColumn={{ xs: 'span 1', sm: 'span 2' }}>
-            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>דירוג</Typography>
-            <RatingSummary average={parseFloat(supplier.average_rating)} totalReviews={supplier.total_reviews} />
-            <Button onClick={toggleReviews} size="small" sx={{ mt: 1 }}>
-              {showReviews ? 'צמצם דירוגים' : 'הרחב דירוגים'}
-            </Button>
-          </Box>
-        </Box>
+    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 mt-4">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <h3 className="text-xl font-bold text-gray-800">{supplier.name}</h3>
+        <Button size="sm" variant="outline" onClick={onClear}>נקה</Button>
+      </div>
 
-        {showReviews && (
-          <Box sx={{ mt: 2 }}>
-            <Divider sx={{ mb: 2 }} />
-            <Box component="fieldset" mb={3} borderColor="transparent" sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-              <Typography component="legend" variant="subtitle1" sx={{ mb: 1 }}>הוסף דירוג חדש</Typography>
-              <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
-                <Typography variant="body2">דירוג (כוכבים):</Typography>
-                <Rating
-                  name="new-rating"
-                  value={newRating}
-                  onChange={(event, newValue) => {
-                    setNewRating(newValue);
-                  }}
-                />
-              </Box>
-              <TextField
-                label="הערות נוספות (אופציונלי)"
-                multiline
-                rows={3}
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                variant="outlined"
-                fullWidth
+      {/* Supplier Details */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <strong className="text-gray-700">שם:</strong> 
+          <span className="mr-2">{supplier.name}</span>
+        </div>
+        <div>
+          <strong className="text-gray-700">ח.פ./ע.מ.:</strong> 
+          <span className="mr-2">{supplier.supplier_id}</span>
+        </div>
+        <div>
+          <strong className="text-gray-700">איש קשר:</strong> 
+          <span className="mr-2">{supplier.poc_name}</span>
+        </div>
+        <div>
+          <strong className="text-gray-700">טלפון:</strong> 
+          <a href={`tel:${supplier.poc_phone}`} className="text-blue-600 hover:underline mr-2">
+            {supplier.poc_phone}
+          </a>
+        </div>
+        <div className="sm:col-span-2">
+          <strong className="text-gray-700">אימייל:</strong> 
+          <a href={`mailto:${supplier.poc_email}`} className="text-blue-600 hover:underline mr-2">
+            {supplier.poc_email}
+          </a>
+        </div>
+      </div>
+
+      {/* Rating Section */}
+      <div className="border-t pt-4">
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">דירוג</h4>
+        <RatingSummary 
+          average={parseFloat(supplier.average_rating)} 
+          totalReviews={supplier.total_reviews} 
+        />
+        <Button 
+          size="sm" 
+          variant="outline" 
+          onClick={toggleReviews}
+          className="mt-3"
+        >
+          {showReviews ? 'צמצם דירוגים' : 'הרחב דירוגים'}
+        </Button>
+      </div>
+
+      {/* Reviews Section */}
+      {showReviews && (
+        <div className="mt-6 border-t pt-6">
+          {/* Add Review Form */}
+          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mb-6">
+            <h4 className="text-lg font-semibold mb-4">הוסף דירוג חדש</h4>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-sm font-medium">דירוג (כוכבים):</span>
+              <Rating
+                name="new-rating"
+                value={newRating}
+                onChange={(event, newValue) => setNewRating(newValue)}
               />
-              <Button 
-                onClick={handleReviewSubmit} 
-                variant="contained" 
-                sx={{ mt: 2 }}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'שולח...' : 'שלח דירוג'}
-              </Button>
-            </Box>
+            </div>
+            <Input
+              label="הערות נוספות (אופציונלי)"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="mb-4"
+            />
+            <Button 
+              variant="primary" 
+              onClick={handleReviewSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'שולח...' : 'שלח דירוג'}
+            </Button>
+          </div>
 
-            <Typography variant="subtitle1" sx={{ mb: 2 }}>היסטוריית דירוגים</Typography>
+          {/* Reviews List */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">היסטוריית דירוגים</h4>
             {loadingReviews ? (
-              <Typography variant="body2">טוען דירוגים...</Typography>
+              <p>טוען דירוגים...</p>
             ) : (
               <ReviewList reviews={reviews} />
             )}
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

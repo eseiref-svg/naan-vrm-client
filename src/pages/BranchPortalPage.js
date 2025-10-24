@@ -1,30 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/axiosConfig'; // שימוש במחזיק המפתחות האוטומטי
+import api from '../api/axiosConfig';
 import { useAuth } from '../context/AuthContext';
 import BalanceCard from '../components/branch-portal/BalanceCard';
 import RecentOrdersTable from '../components/branch-portal/RecentOrdersTable';
 import BranchSupplierSearch from '../components/branch-portal/BranchSupplierSearch';
 import BranchSupplierInfoCard from '../components/branch-portal/BranchSupplierInfoCard';
 import RequestSupplierForm from '../components/branch-portal/RequestSupplierForm';
+import NotificationsList from '../components/branch-portal/NotificationsList';
+import Button from '../components/shared/Button';
 
 function BranchPortalPage() {
   const { user } = useAuth();
   
-  // State for branch data
   const [branch, setBranch] = useState(null);
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
-  
-  // State for supplier search
   const [foundSuppliers, setFoundSuppliers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCriteria, setSearchCriteria] = useState('name');
-  
-  // UI State
   const [loading, setLoading] = useState(true);
   const [showRequestForm, setShowRequestForm] = useState(false);
 
-  // Effect to automatically find the manager's branch
   useEffect(() => {
     if (user?.id) {
       setLoading(true);
@@ -34,12 +30,10 @@ function BranchPortalPage() {
         })
         .catch(error => {
           console.error("Could not find a branch for this manager:", error);
-          // In a real app, you might show a message that the user is not assigned to a branch
         });
     }
   }, [user]);
 
-  // Effect to fetch data for the identified branch
   useEffect(() => {
     if (!branch) return;
 
@@ -88,17 +82,19 @@ function BranchPortalPage() {
         <p>טוען נתונים...</p>
       ) : branch ? (
         <div className="space-y-8">
+          <NotificationsList />
+          
           <BalanceCard balanceData={balance} />
           
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
             <div className="flex justify-between items-center mb-4 pb-2 border-b">
                 <h3 className="text-xl font-bold text-gray-800">מאגר ספקים מאושרים</h3>
-                <button 
+                <Button 
+                    variant="success"
                     onClick={() => setShowRequestForm(true)}
-                    className="bg-green-500 text-white hover:bg-green-600 font-bold py-2 px-4 rounded-lg text-sm"
                 >
                     הגש בקשה לספק חדש
-                </button>
+                </Button>
             </div>
             <BranchSupplierSearch 
               query={searchQuery}
@@ -106,6 +102,7 @@ function BranchPortalPage() {
               criteria={searchCriteria}
               setCriteria={setSearchCriteria}
               onSearch={handleSupplierSearch}
+              onClear={clearSearch}
             />
             {foundSuppliers.length > 0 && (
               <div className="mt-4 space-y-4">
@@ -143,4 +140,3 @@ function BranchPortalPage() {
 }
 
 export default BranchPortalPage;
-

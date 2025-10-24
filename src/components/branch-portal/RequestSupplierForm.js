@@ -1,39 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Dialog, DialogTitle, DialogContent, TextField, DialogActions, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-
-// Theme provider for RTL support
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import rtlPlugin from 'stylis-plugin-rtl';
-import { prefixer } from 'stylis';
-import { CacheProvider } from '@emotion/react';
-import createCache from '@emotion/cache';
-
-const theme = createTheme({
-  direction: 'rtl',
-});
-
-const cacheRtl = createCache({
-  key: 'muirtl',
-  stylisPlugins: [prefixer, rtlPlugin],
-});
+import api from '../../api/axiosConfig';
+import Button from '../shared/Button';
+import Modal from '../shared/Modal';
+import Input from '../shared/Input';
+import Select from '../shared/Select';
 
 function RequestSupplierForm({ open, onClose, onSuccess, userId, branchId }) {
   const [formData, setFormData] = useState({
+    supplier_id: '',
     supplier_name: '',
     poc_name: '',
     poc_email: '',
-    poc_phone: '',
-    justification: ''
+    poc_phone: ''
   });
   const [supplierFields, setSupplierFields] = useState([]);
   const [selectedField, setSelectedField] = useState('');
   const [newField, setNewField] = useState('');
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     if (open) {
-      axios.get('http://localhost:5000/api/supplier-fields')
+      api.get('/supplier-fields')
         .then(response => {
           setSupplierFields(response.data);
         })
@@ -52,10 +40,48 @@ function RequestSupplierForm({ open, onClose, onSuccess, userId, branchId }) {
     setSelectedField(event.target.value);
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    // אימות ח.פ. ספק - חובה, עד 9 ספרות
+    if (!formData.supplier_id || !formData.supplier_id.trim()) {
+      errors.supplier_id = 'מספר ח.פ. הוא שדה חובה';
+    } else if (!/^\d{1,9}$/.test(formData.supplier_id.trim())) {
+      errors.supplier_id = 'מספר ח.פ. חייב להכיל עד 9 ספרות';
+    }
+    
+    // אימות אימייל - רק אותיות אנגלית ופורמט תקין (רק אם הוזן)
+    if (formData.poc_email && formData.poc_email.trim()) {
+      const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(formData.poc_email)) {
+        errors.poc_email = 'כתובת אימייל לא תקינה. יש להשתמש באותיות אנגלית בלבד';
+      }
+    }
+    
+    // אימות טלפון - בדיוק 10 ספרות (רק אם הוזן)
+    if (formData.poc_phone && formData.poc_phone.trim()) {
+      const phoneDigits = formData.poc_phone.replace(/-/g, '');
+      if (!/^\d{10}$/.test(phoneDigits)) {
+        errors.poc_phone = 'מספר טלפון חייב להכיל בדיוק 10 ספרות';
+      }
+    }
+    
+    return errors;
+  };
+
   const handleSubmit = async () => {
+    // בדיקת validation
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    
+    setValidationErrors({});
     setError('');
+    
     try {
-      await axios.post('http://localhost:5000/api/supplier-requests', {
+      await api.post('/supplier-requests', {
         ...formData,
         requested_by_user_id: userId,
         branch_id: branchId,
@@ -70,60 +96,91 @@ function RequestSupplierForm({ open, onClose, onSuccess, userId, branchId }) {
   };
 
   return (
-    <CacheProvider value={cacheRtl}>
-      <ThemeProvider theme={theme}>
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" dir="rtl">
-          <DialogTitle>בקשה להוספת ספק חדש</DialogTitle>
-          <DialogContent>
-            <TextField autoFocus margin="dense" name="supplier_name" label="שם הספק" type="text" fullWidth variant="outlined" onChange={handleChange} required />
-            
-            <FormControl fullWidth margin="dense" required>
-              <InputLabel id="supplier-field-label">תחום הספק</InputLabel>
-              <Select
-                labelId="supplier-field-label"
-                value={selectedField}
-                label="תחום הספק"
-                onChange={handleFieldChange}
-              >
-                {supplierFields.map((fieldOption) => (
-                  <MenuItem key={fieldOption.supplier_field_id} value={fieldOption.supplier_field_id}>
-                    {/* THE FIX IS HERE: Changed 'field_of_work' to 'field' */}
-                    {fieldOption.field}
-                  </MenuItem>
-                ))}
-                <MenuItem value="new">אחר (תחום חדש)</MenuItem>
-              </Select>
-            </FormControl>
+    <Modal 
+      isOpen={open} 
+      onClose={onClose}
+      title="בקשה להוספת ספק חדש"
+      size="md"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>ביטול</Button>
+          <Button variant="primary" onClick={handleSubmit}>שלח בקשה</Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Input 
+          autoFocus 
+          name="supplier_name" 
+          label="שם הספק" 
+          value={formData.supplier_name}
+          onChange={handleChange} 
+          required 
+        />
+        
+        <Input 
+          name="supplier_id" 
+          label="מספר ח.פ. ספק" 
+          value={formData.supplier_id}
+          onChange={handleChange} 
+          required
+          error={validationErrors.supplier_id}
+          helperText="עד 9 ספרות"
+        />
+        
+        <Select
+          label="תחום הספק"
+          value={selectedField}
+          onChange={handleFieldChange}
+          options={[
+            { value: 'new', label: 'אחר (תחום חדש)' },
+            ...supplierFields.map(fieldOption => ({
+              value: fieldOption.supplier_field_id,
+              label: fieldOption.field
+            }))
+          ]}
+          required
+        />
 
-            {selectedField === 'new' && (
-              <TextField 
-                margin="dense" 
-                name="new_field" 
-                label="שם התחום החדש" 
-                type="text" 
-                fullWidth 
-                variant="outlined" 
-                value={newField}
-                onChange={(e) => setNewField(e.target.value)} 
-                required 
-              />
-            )}
+        {selectedField === 'new' && (
+          <Input 
+            name="new_field" 
+            label="שם התחום החדש" 
+            value={newField}
+            onChange={(e) => setNewField(e.target.value)} 
+            required 
+          />
+        )}
 
-            <TextField margin="dense" name="poc_name" label="שם איש קשר" type="text" fullWidth variant="outlined" onChange={handleChange} />
-            <TextField margin="dense" name="poc_email" label="אימייל איש קשר" type="email" fullWidth variant="outlined" onChange={handleChange} />
-            <TextField margin="dense" name="poc_phone" label="טלפון איש קשר" type="tel" fullWidth variant="outlined" onChange={handleChange} />
-            <TextField margin="dense" name="justification" label="נימוק לבקשה (למה צריך את הספק?)" type="text" fullWidth multiline rows={3} variant="outlined" onChange={handleChange} required />
-            {error && <p className="text-red-500 text-center mt-2">{error}</p>}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={onClose}>ביטול</Button>
-            <Button onClick={handleSubmit} variant="contained">שלח בקשה</Button>
-          </DialogActions>
-        </Dialog>
-      </ThemeProvider>
-    </CacheProvider>
+        <Input 
+          name="poc_name" 
+          label="שם איש קשר" 
+          value={formData.poc_name}
+          onChange={handleChange}
+          required
+        />
+        <Input 
+          name="poc_email" 
+          label="אימייל איש קשר" 
+          type="email" 
+          value={formData.poc_email}
+          onChange={handleChange}
+          error={validationErrors.poc_email}
+        />
+        <Input 
+          name="poc_phone" 
+          label="טלפון איש קשר" 
+          type="tel" 
+          value={formData.poc_phone}
+          onChange={handleChange}
+          required
+          error={validationErrors.poc_phone}
+          helperText="ניתן להזין מקפים, לדוגמה: 052-828-1234"
+        />
+        {error && <p className="text-red-500 text-center mt-2">{error}</p>}
+      </div>
+    </Modal>
   );
 }
 
 export default RequestSupplierForm;
-

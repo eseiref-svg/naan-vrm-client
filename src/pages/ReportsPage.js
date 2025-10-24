@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../api/axiosConfig';
 import AnnualCashFlowChart from '../components/reports/AnnualCashFlowChart';
+import Button from '../components/shared/Button';
+import Select from '../components/shared/Select';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -98,22 +100,23 @@ function ReportsPage() {
           דוח תזרים מזומנים שנתי
         </h2>
         <div className="flex items-center gap-4">
-          <div className="flex items-center">
-            <label htmlFor="year-select" className="ml-2 font-semibold">בחר שנה:</label>
-            <select 
+          <div className="flex items-center gap-2">
+            <label htmlFor="year-select" className="font-semibold">בחר שנה:</label>
+            <Select
               id="year-select" 
               value={selectedYear} 
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="border border-gray-300 rounded-md p-2"
-            >
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
+              options={years.map(year => ({
+                value: year,
+                label: year.toString()
+              }))}
+              fullWidth={false}
+              className="w-28"
+            />
           </div>
           <div className="flex gap-2">
-            <button onClick={handleExportPDF} className="bg-red-500 text-white hover:bg-red-600 font-bold py-2 px-3 rounded-md text-sm">יצא ל-PDF</button>
-            <button onClick={handleExportExcel} className="bg-green-500 text-white hover:bg-green-600 font-bold py-2 px-3 rounded-md text-sm">יצא ל-Excel</button>
+            <Button onClick={handleExportPDF} variant="danger" size="sm">יצא ל-PDF</Button>
+            <Button onClick={handleExportExcel} variant="success" size="sm">יצא ל-Excel</Button>
           </div>
         </div>
       </div>
@@ -133,4 +136,3 @@ function ReportsPage() {
 }
 
 export default ReportsPage;
-

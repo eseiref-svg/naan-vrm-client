@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
-import { Button, TextField, Rating, Box, Typography, Card, CardHeader, CardContent, Divider, Tabs, Tab } from '@mui/material';
+import { Rating, Typography } from '@mui/material';
+import Button from '../shared/Button';
+import Input from '../shared/Input';
 import RatingSummary from '../shared/RatingSummary';
 import ReviewList from '../shared/ReviewList';
 
@@ -9,8 +11,6 @@ function SupplierDetailsCard({ supplier, onBackToList, onEdit }) {
   const [activeTab, setActiveTab] = useState('details');
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
-  
-  // State for the new review form
   const [newRating, setNewRating] = useState(0);
   const [newComment, setNewComment] = useState('');
   
@@ -27,13 +27,11 @@ function SupplierDetailsCard({ supplier, onBackToList, onEdit }) {
       .finally(() => setLoadingReviews(false));
   };
 
-  // Fetch reviews only when the 'performance' tab is selected
   useEffect(() => {
     if (activeTab === 'performance') {
       fetchReviews();
     }
   }, [activeTab, supplier]);
-
 
   const handleReviewSubmit = async () => {
     if (newRating === 0) {
@@ -45,11 +43,10 @@ function SupplierDetailsCard({ supplier, onBackToList, onEdit }) {
         supplier_id: supplier.supplier_id,
         rate: newRating,
         comment: newComment
-        // user_id is automatically added by the server from the token
       });
       setNewRating(0);
       setNewComment('');
-      fetchReviews(); // Refresh the reviews list after submitting
+      fetchReviews();
       alert('הדירוג נשלח בהצלחה!');
     } catch (err) {
       console.error("Error submitting review:", err);
@@ -57,96 +54,128 @@ function SupplierDetailsCard({ supplier, onBackToList, onEdit }) {
     }
   };
 
-  const TabButton = ({ tabName, label }) => (
-    <button
-      className={`px-4 py-2 text-sm font-medium rounded-t-lg ${activeTab === tabName ? 'bg-white border-b-0 border-t-2 border-r-2 border-l-2 border-blue-500 text-blue-600' : 'bg-gray-100 text-gray-600'}`}
-      onClick={() => setActiveTab(tabName)}
-    >
-      {label}
-    </button>
-  );
-
   return (
-    <Card sx={{ p: 1 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-        <Button onClick={onBackToList} variant="contained" color="inherit" size="small">חזרה לרשימה</Button>
-        <Button variant="contained" color="primary" size="small" onClick={() => onEdit(supplier)}>ערוך פרטי ספק</Button>
-      </Box>
+    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <Button variant="outline" onClick={onBackToList}>חזרה לרשימה</Button>
+        <Button variant="primary" onClick={() => onEdit(supplier)}>ערוך פרטי ספק</Button>
+      </div>
 
-      <CardHeader title={<Typography variant="h6">{supplier.name}</Typography>} subheader={supplier.field || 'לא שויך'} />
-      <CardContent>
-        <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }} gap={2} sx={{ mb: 2 }}>
-          <Typography variant="body2"><strong>איש קשר:</strong> {supplier.poc_name || 'לא הוזן'}</Typography>
-          <Typography variant="body2"><strong>טלפון:</strong> {supplier.poc_phone || 'לא הוזן'}</Typography>
-          <Typography variant="body2"><strong>אימייל:</strong> {supplier.poc_email || 'לא הוזן'}</Typography>
-        </Box>
+      {/* Title */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">{supplier.name}</h2>
+        <p className="text-gray-600">{supplier.field || 'לא שויך'}</p>
+      </div>
 
-        <Tabs
-          value={activeTab}
-          onChange={(e, v) => setActiveTab(v)}
-          textColor="primary"
-          indicatorColor="primary"
-          sx={{ mb: 2 }}
-        >
-          <Tab label="פרטים" value="details" />
-          <Tab label="היסטוריית תשלומים" value="payment_history" />
-          <Tab label="ביצועים ודירוג" value="performance" />
-        </Tabs>
+      {/* Basic Info */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <strong className="text-gray-700">איש קשר:</strong> 
+          <span className="mr-2">{supplier.poc_name || 'לא הוזן'}</span>
+        </div>
+        <div>
+          <strong className="text-gray-700">טלפון:</strong> 
+          <span className="mr-2">{supplier.poc_phone || 'לא הוזן'}</span>
+        </div>
+        <div className="md:col-span-2">
+          <strong className="text-gray-700">אימייל:</strong> 
+          <span className="mr-2">{supplier.poc_email || 'לא הוזן'}</span>
+        </div>
+      </div>
 
-        <Box>
-          {activeTab === 'details' && (
-            <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>פרטי התקשרות</Typography>
-              <Typography variant="body2"><strong>איש קשר:</strong> {supplier.poc_name || 'לא הוזן'}</Typography>
-              <Typography variant="body2"><strong>טלפון:</strong> {supplier.poc_phone || 'לא הוזן'}</Typography>
-              <Typography variant="body2"><strong>אימייל:</strong> {supplier.poc_email || 'לא הוזן'}</Typography>
-            </Box>
-          )}
-          {activeTab === 'payment_history' && (
-            <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>היסטוריית תשלומים</Typography>
-              <Typography variant="body2">יוצג בקרוב...</Typography>
-            </Box>
-          )}
-          {activeTab === 'performance' && (
-            <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-              <Box component="fieldset" mb={3} borderColor="transparent" sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                <Typography component="legend" variant="subtitle1" sx={{ mb: 1 }}>הוסף דירוג חדש</Typography>
-                <Box display="flex" alignItems="center" gap={2} sx={{ mb: 2 }}>
-                  <Typography variant="body2">דירוג (כוכבים):</Typography>
-                  <Rating
-                    name="new-rating"
-                    value={newRating}
-                    onChange={(event, newValue) => {
-                      setNewRating(newValue);
-                    }}
-                  />
-                </Box>
-                <TextField
-                    label="הערות נוספות (אופציונלי)"
-                    multiline
-                    rows={3}
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    variant="outlined"
-                    fullWidth
+      {/* Tabs */}
+      <div className="border-b border-gray-200 mb-6">
+        <div className="flex gap-2">
+          <button
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'details' 
+                ? 'border-blue-600 text-blue-600' 
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+            }`}
+            onClick={() => setActiveTab('details')}
+          >
+            פרטים
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'payment_history' 
+                ? 'border-blue-600 text-blue-600' 
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+            }`}
+            onClick={() => setActiveTab('payment_history')}
+          >
+            היסטוריית תשלומים
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'performance' 
+                ? 'border-blue-600 text-blue-600' 
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+            }`}
+            onClick={() => setActiveTab('performance')}
+          >
+            ביצועים ודירוג
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div>
+        {activeTab === 'details' && (
+          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <h3 className="text-lg font-semibold mb-3">פרטי התקשרות</h3>
+            <div className="space-y-2">
+              <p><strong>איש קשר:</strong> {supplier.poc_name || 'לא הוזן'}</p>
+              <p><strong>טלפון:</strong> {supplier.poc_phone || 'לא הוזן'}</p>
+              <p><strong>אימייל:</strong> {supplier.poc_email || 'לא הוזן'}</p>
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'payment_history' && (
+          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <h3 className="text-lg font-semibold mb-3">היסטוריית תשלומים</h3>
+            <p>יוצג בקרוב...</p>
+          </div>
+        )}
+        
+        {activeTab === 'performance' && (
+          <div className="space-y-6">
+            {/* Add Review Form */}
+            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+              <h3 className="text-lg font-semibold mb-4">הוסף דירוג חדש</h3>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-sm font-medium">דירוג (כוכבים):</span>
+                <Rating
+                  name="new-rating"
+                  value={newRating}
+                  onChange={(event, newValue) => setNewRating(newValue)}
                 />
-                <Button onClick={handleReviewSubmit} variant="contained" sx={{ mt: 2 }}>שלח דירוג</Button>
-              </Box>
+              </div>
+              <Input
+                label="הערות נוספות (אופציונלי)"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="mb-4"
+              />
+              <Button variant="primary" onClick={handleReviewSubmit}>שלח דירוג</Button>
+            </div>
 
-              <Typography variant="subtitle1" sx={{ mb: 2 }}>היסטוריית דירוגים</Typography>
+            {/* Reviews List */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">היסטוריית דירוגים</h3>
               {loadingReviews ? (
-                <Typography variant="body2">טוען דירוגים...</Typography>
+                <p>טוען דירוגים...</p>
               ) : (
                 <ReviewList reviews={reviews} />
               )}
-            </Box>
-          )}
-        </Box>
-      </CardContent>
-    </Card>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 export default SupplierDetailsCard;
-

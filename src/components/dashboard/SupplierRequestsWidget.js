@@ -1,21 +1,28 @@
 import React from 'react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
+import Button from '../shared/Button';
 
-function SupplierRequestsWidget({ requests, onUpdateRequest }) {
+function SupplierRequestsWidget({ requests, onUpdateRequest, onApproveRequest }) {
 
-  const handleUpdateStatus = async (requestId, newStatus) => {
+  const handleReject = async (requestId) => {
+    if (!window.confirm('האם אתה בטוח שברצונך לדחות את הבקשה?')) {
+      return;
+    }
+    
     try {
-      await axios.put(`http://localhost:5000/api/supplier-requests/${requestId}`, { status: newStatus });
-      onUpdateRequest(requestId); // Notify the parent component to refresh the list
+      await api.put(`/supplier-requests/${requestId}`, { status: 'rejected' });
+      onUpdateRequest(requestId);
+      alert('✅ הבקשה נדחתה בהצלחה.');
     } catch (error) {
-      console.error(`Failed to ${newStatus} request`, error);
-      alert('הפעולה נכשלה. אנא נסה שוב.');
+      console.error('Failed to reject request:', error);
+      const errorMessage = error.response?.data?.message || 'שגיאה בלתי צפויה';
+      alert(`❌ הפעולה נכשלה.\n\nפרטי השגיאה: ${errorMessage}`);
     }
   };
 
   if (!requests || requests.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 mt-8">
+      <div id="supplier-requests-widget" className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 mt-8">
         <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">בקשות ספקים חדשים להוספה</h3>
         <p className="text-gray-500 text-center py-4">אין בקשות חדשות הממתינות לאישור.</p>
       </div>
@@ -23,7 +30,7 @@ function SupplierRequestsWidget({ requests, onUpdateRequest }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 mt-8">
+    <div id="supplier-requests-widget" className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 mt-8">
       <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">בקשות ספקים חדשים להוספה</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
@@ -43,19 +50,23 @@ function SupplierRequestsWidget({ requests, onUpdateRequest }) {
                 <td className="py-2 px-3">{req.requested_by}</td>
                 <td className="py-2 px-3">{req.branch_name}</td>
                 <td className="py-2 px-3">{new Date(req.created_at).toLocaleDateString('he-IL')}</td>
-                <td className="py-2 px-3 text-center">
-                  <button 
-                    onClick={() => handleUpdateStatus(req.request_id, 'approved')}
-                    className="bg-green-500 text-white hover:bg-green-600 text-xs font-bold py-1 px-3 rounded-md ml-2"
-                  >
-                    אשר
-                  </button>
-                  <button 
-                    onClick={() => handleUpdateStatus(req.request_id, 'rejected')}
-                    className="bg-red-500 text-white hover:bg-red-600 text-xs font-bold py-1 px-3 rounded-md"
-                  >
-                    דחה
-                  </button>
+                <td className="py-2 px-3">
+                  <div className="flex justify-center gap-2">
+                    <Button 
+                      size="sm"
+                      variant="success"
+                      onClick={() => onApproveRequest(req)}
+                    >
+                      אשר
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="danger"
+                      onClick={() => handleReject(req.request_id)}
+                    >
+                      דחה
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -67,4 +78,3 @@ function SupplierRequestsWidget({ requests, onUpdateRequest }) {
 }
 
 export default SupplierRequestsWidget;
-

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/axiosConfig'; // שימוש במחזיק המפתחות האוטומטי
+import api from '../api/axiosConfig';
 import SuppliersTable from '../components/SuppliersTable';
 import SupplierSearch from '../components/suppliers/SupplierSearch';
 import SupplierDetailsCard from '../components/suppliers/SupplierDetailsCard';
 import AddSupplierForm from '../components/AddSupplierForm';
-import { Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import Button from '../components/shared/Button';
+import Modal from '../components/shared/Modal';
+import Input from '../components/shared/Input';
+import Select from '../components/shared/Select';
 
 function SuppliersPage() {
   const [suppliers, setSuppliers] = useState([]);
-  const [supplierFields, setSupplierFields] = useState([]); // State for supplier fields list
+  const [supplierFields, setSupplierFields] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchCriteria, setSearchCriteria] = useState('name');
   const [loading, setLoading] = useState(true);
@@ -33,7 +36,6 @@ function SuppliersPage() {
       });
   };
   
-  // Function to fetch the list of supplier fields for the dropdowns
   const fetchSupplierFields = () => {
     api.get('/supplier-fields')
         .then(response => setSupplierFields(response.data))
@@ -42,11 +44,16 @@ function SuppliersPage() {
 
   useEffect(() => {
     fetchSuppliers();
-    fetchSupplierFields(); // Fetch fields on component load
+    fetchSupplierFields();
   }, []);
 
   const handleSearch = () => {
     fetchSuppliers(searchCriteria, searchQuery);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    fetchSuppliers('', '');
   };
 
   const handleSupplierAdded = () => {
@@ -99,12 +106,12 @@ function SuppliersPage() {
       <div className="flex justify-between items-center mb-6 pb-4 border-b-2 border-gray-200">
         <h2 className="text-3xl font-bold text-gray-800">ניהול ספקים</h2>
         {!selectedSupplier && (
-           <button 
-             onClick={() => setShowAddForm(!showAddForm)}
-             className="bg-green-500 text-white hover:bg-green-600 font-bold py-2 px-4 rounded-lg"
-           >
-             {showAddForm ? 'הסתר טופס' : 'הוסף ספק חדש'}
-           </button>
+          <Button 
+            variant="success"
+            onClick={() => setShowAddForm(!showAddForm)}
+          >
+            {showAddForm ? 'הסתר טופס' : 'הוסף ספק חדש'}
+          </Button>
         )}
       </div>
 
@@ -124,6 +131,7 @@ function SuppliersPage() {
             criteria={searchCriteria}
             setCriteria={setSearchCriteria}
             onSearch={handleSearch}
+            onClear={handleClearSearch}
           />
           <div className="mt-8">
             {loading ? (
@@ -140,40 +148,66 @@ function SuppliersPage() {
         </>
       )}
 
-      {/* Edit Supplier Modal - NOW WITH SUPPLIER FIELD DROPDOWN */}
-      <Dialog open={isEditing} onClose={() => setIsEditing(false)}>
-        <DialogTitle>עריכת ספק</DialogTitle>
-        <DialogContent>
-          {currentUser && (
-            <div className="space-y-4 pt-2">
-              <TextField margin="dense" label="שם הספק" type="text" fullWidth name="name" value={currentUser.name || ''} onChange={handleEditChange} />
-              <TextField margin="dense" label="איש קשר" type="text" fullWidth name="poc_name" value={currentUser.poc_name || ''} onChange={handleEditChange} />
-              <TextField margin="dense" label="טלפון" type="text" fullWidth name="poc_phone" value={currentUser.poc_phone || ''} onChange={handleEditChange} />
-              <TextField margin="dense" label="אימייל" type="email" fullWidth name="poc_email" value={currentUser.poc_email || ''} onChange={handleEditChange} />
-              
-              <FormControl fullWidth margin="dense">
-                <InputLabel>תחום ספק</InputLabel>
-                <Select name="supplier_field_id" label="תחום ספק" value={currentUser.supplier_field_id || ''} onChange={handleEditChange}>
-                  {supplierFields.map(field => (
-                    <MenuItem key={field.supplier_field_id} value={field.supplier_field_id}>
-                      {field.field}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <TextField margin="dense" label="סטטוס" type="text" fullWidth name="status" value={currentUser.status || ''} onChange={handleEditChange} />
-            </div>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setIsEditing(false)}>ביטול</Button>
-          <Button onClick={handleUpdateSupplier} color="primary">שמור שינויים</Button>
-        </DialogActions>
-      </Dialog>
+      <Modal 
+        isOpen={isEditing} 
+        onClose={() => setIsEditing(false)}
+        title="עריכת ספק"
+        size="md"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setIsEditing(false)}>ביטול</Button>
+            <Button variant="primary" onClick={handleUpdateSupplier}>שמור שינויים</Button>
+          </>
+        }
+      >
+        {currentUser && (
+          <div className="space-y-4">
+            <Input 
+              label="שם הספק" 
+              name="name" 
+              value={currentUser.name || ''} 
+              onChange={handleEditChange} 
+            />
+            <Input 
+              label="איש קשר" 
+              name="poc_name" 
+              value={currentUser.poc_name || ''} 
+              onChange={handleEditChange} 
+            />
+            <Input 
+              label="טלפון" 
+              name="poc_phone" 
+              value={currentUser.poc_phone || ''} 
+              onChange={handleEditChange} 
+            />
+            <Input 
+              label="אימייל" 
+              type="email"
+              name="poc_email" 
+              value={currentUser.poc_email || ''} 
+              onChange={handleEditChange} 
+            />
+            <Select
+              name="supplier_field_id"
+              label="תחום ספק"
+              value={currentUser.supplier_field_id || ''}
+              onChange={handleEditChange}
+              options={supplierFields.map(field => ({
+                value: field.supplier_field_id,
+                label: field.field
+              }))}
+            />
+            <Input 
+              label="סטטוס" 
+              name="status" 
+              value={currentUser.status || ''} 
+              onChange={handleEditChange} 
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
 
 export default SuppliersPage;
-

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // We use axios directly here because this is a public page and doesn't need the auth token
-import { Button, TextField, Alert } from '@mui/material';
+import axios from 'axios';
+import Button from '../components/shared/Button';
+import Input from '../components/shared/Input';
 
 function ResetPasswordPage() {
-  const { token } = useParams(); // Reads the unique token from the URL
+  const { token } = useParams();
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,7 +34,7 @@ function ResetPasswordPage() {
       setSuccess(response.data.message + ' הנך מועבר/ת לעמוד הכניסה בעוד מספר שניות.');
       setTimeout(() => {
         navigate('/login');
-      }, 4000); // Redirect to login page after 4 seconds
+      }, 4000);
     } catch (err) {
       setError(err.response?.data?.message || 'איפוס הסיסמה נכשל.');
     }
@@ -45,29 +46,33 @@ function ResetPasswordPage() {
             <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">איפוס סיסמה</h2>
             {!success ? (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <TextField 
+                    <Input 
                         label="סיסמה חדשה"
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        fullWidth
                         required
                     />
-                    <TextField 
+                    <Input 
                         label="אימות סיסמה חדשה"
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        fullWidth
                         required
                     />
-                    {error && <Alert severity="error">{error}</Alert>}
-                    <Button type="submit" variant="contained" fullWidth size="large">
+                    {error && (
+                      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+                        {error}
+                      </div>
+                    )}
+                    <Button type="submit" variant="primary" fullWidth size="lg">
                         אפס סיסמה
                     </Button>
                 </form>
             ) : (
-                <Alert severity="success">{success}</Alert>
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+                  {success}
+                </div>
             )}
         </div>
     </div>
@@ -75,4 +80,3 @@ function ResetPasswordPage() {
 }
 
 export default ResetPasswordPage;
-
